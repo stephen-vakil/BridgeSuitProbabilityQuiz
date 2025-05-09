@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contract Bridge: Suit Split Practice & Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        .suit-icon {
+            display: inline-block;
+            width: 1.2em;
+            height: 1.2em;
+            margin-right: 0.25em;
+            vertical-align: middle;
+        }
+        .spade { color: #2c3e50; } /* Dark blue/black */
+        .heart { color: #e74c3c; } /* Red */
+        .diamond { color: #f39c12; } /* Orange */
+        .club { color: #27ae60; } /* Green */
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+            border-radius: 0.375rem; /* rounded-md */
+            border: 1px solid #d1d5db; /* gray-300 */
+            padding: 0.5rem 0.75rem; /* py-2 px-3 */
+            width: 4rem; /* w-16 */
+            text-align: center;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .feedback-correct {
+            border-color: #10b981 !important; /* green-500 */
+        }
+        .feedback-incorrect {
+            border-color: #ef4444 !important; /* red-500 */
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .btn-primary {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .btn-secondary {
+            background-color: #6b7280; /* gray-500 */
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563; /* gray-600 */
+        }
+        .feedback-message {
+            min-width: 10rem; /* Allow space for percentage text */
+        }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            color: #4b5563; /* gray-600 */
+        }
+        .tab-button.active {
+            border-bottom-color: #3b82f6; /* blue-500 */
+            color: #3b82f6; /* blue-500 */
+            font-weight: 700;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Quiz specific styles */
+        .quiz-question-container {
+            background-color: #eef2ff; /* indigo-50 */
+            padding: 1rem;
+            border-radius: 0.5rem; /* rounded-lg */
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+        }
+        .quiz-input {
+            width: 3.5rem !important; /* Slightly smaller for quiz inputs */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 flex flex-col items-center p-4">
+    <div id="bridgeApp" class="bg-white p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-4xl">
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">Contract Bridge Practice</h1>
+        </header>
+
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="flex space-x-4" aria-label="Tabs">
+                <button id="tabRankingsBtn" class="tab-button active" data-tab="rankings">Suit Rankings</button>
+                <button id="tabQuizBtn" class="tab-button" data-tab="quiz">Timed Quiz</button>
+            </nav>
+        </div>
+
+        <main>
+            <div id="rankingsContent" class="tab-content active">
+                <p class="text-gray-600 mt-2 mb-4">You are Declarer. Given your hand and Dummy's (both 13 cards), predict the opponent card splits.</p>
+                <section id="handsDisplay" class="mb-8 p-4 bg-blue-50 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold text-blue-700 mb-3">Current Deal:</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="declarerHandDisplay" class="p-3 bg-white rounded shadow-sm">
+                            <h3 class="font-medium text-gray-700">Declarer's Hand (13 cards):</h3>
+                            <p class="text-sm text-gray-600">
+                                <span class="suit-icon spade">♠</span> Spades: <span id="declarerS" class="font-semibold">0</span>,
+                                <span class="suit-icon heart">♥</span> Hearts: <span id="declarerH" class="font-semibold">0</span><br>
+                                <span class="suit-icon diamond">♦</span> Diamonds: <span id="declarerD" class="font-semibold">0</span>,
+                                <span class="suit-icon club">♣</span> Clubs: <span id="declarerC" class="font-semibold">0</span>
+                            </p>
+                        </div>
+                        <div id="dummyHandDisplay" class="p-3 bg-white rounded shadow-sm">
+                            <h3 class="font-medium text-gray-700">Dummy's Hand (13 cards):</h3>
+                            <p class="text-sm text-gray-600">
+                                <span class="suit-icon spade">♠</span> Spades: <span id="dummyS" class="font-semibold">0</span>,
+                                <span class="suit-icon heart">♥</span> Hearts: <span id="dummyH" class="font-semibold">0</span><br>
+                                <span class="suit-icon diamond">♦</span> Diamonds: <span id="dummyD" class="font-semibold">0</span>,
+                                <span class="suit-icon club">♣</span> Clubs: <span id="dummyC" class="font-semibold">0</span>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+                <section id="suitAnalysis" class="space-y-6 mb-8"></section>
+                <section id="controls" class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-8">
+                    <button id="checkAnswersBtn" class="btn btn-primary w-full sm:w-auto">Check Answers</button>
+                    <button id="newDealBtn" class="btn btn-secondary w-full sm:w-auto">New Deal</button>
+                </section>
+                <div id="overallFeedback" class="mt-6 text-center text-lg font-medium"></div>
+            </div>
+
+            <div id="quizContent" class="tab-content">
+                <p class="text-gray-600 mt-2 mb-4">Enter the most likely opponent suit splits as quickly as possible.</p>
+                <section id="quizSetup" class="mb-6 p-4 bg-gray-50 rounded-lg shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <label for="quizTimerDuration" class="mr-2 font-medium text-gray-700">Timer (seconds):</label>
+                        <input type="number" id="quizTimerDuration" value="30" min="10" max="300" class="w-20 text-center">
+                    </div>
+                    <button id="startQuizBtn" class="btn btn-primary">Start Quiz</button>
+                    <div id="quizTimerDisplay" class="text-2xl font-bold text-blue-600">00:00</div>
+                     <button id="stopQuizBtn" class="btn btn-secondary hidden">Stop Quiz</button>
+                </section>
+
+                <section id="quizArea" class="space-y-4 mb-6">
+                    </section>
+
+                <section id="quizResults" class="mt-6 p-4 bg-green-50 rounded-lg shadow-sm hidden">
+                    <h3 class="text-xl font-semibold text-green-700 mb-3">Quiz Finished!</h3>
+                    <p id="quizScore" class="text-lg"></p>
+                    <div id="quizDetailedFeedback" class="mt-2 space-y-1"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script>
+        // --- Shared Data (can be outside DOMContentLoaded) ---
+        const SUITS_DATA_FOR_RANKINGS_TAB_ONLY = ['S', 'H', 'D', 'C'];
+        const SUIT_KEYS_FOR_RANKINGS_TAB_ONLY = { SPADES: 'S', HEARTS: 'H', DIAMONDS: 'D', CLUBS: 'C' };
+        const SUIT_DETAILS_FOR_RANKINGS_TAB_ONLY = {
+            'S': { name: 'Spades', icon: '♠', class: 'spade' },
+            'H': { name: 'Hearts', icon: '♥', class: 'heart' },
+            'D': { name: 'Diamonds', icon: '♦', class: 'diamond' },
+            'C': { name: 'Clubs', icon: '♣', class: 'club' }
+        };
+        const SUIT_SPLIT_LIKELIHOODS = {
+            0: [{ split: [0, 0], P: "100%" }], 1: [{ split: [1, 0], P: "100%" }],
+            2: [{ split: [1, 1], P: "52%" }, { split: [2, 0], P: "48%" }],
+            3: [{ split: [2, 1], P: "78%" }, { split: [3, 0], P: "22%" }],
+            4: [{ split: [3, 1], P: "49.74%" }, { split: [2, 2], P: "39.73%" }, { split: [4, 0], P: "10.53%" }],
+            5: [{ split: [3, 2], P: "67.83%" }, { split: [4, 1], P: "28.26%" }, { split: [5, 0], P: "3.91%" }],
+            6: [{ split: [4, 2], P: "48.45%" }, { split: [3, 3], P: "35.53%" }, { split: [5, 1], P: "14.53%" }, { split: [6, 0], P: "1.49%" }],
+            7: [{ split: [4, 3], P: "62.17%" }, { split: [5, 2], P: "30.55%" }, { split: [6, 1], P: "6.79%" }, { split: [7, 0], P: "0.49%" }],
+            8: [{ split: [5, 3], P: "47.12%" }, { split: [4, 4], P: "32.72%" }, { split: [6, 2], P: "17.14%" }, { split: [7, 1], P: "2.86%" }, { split: [8, 0], P: "0.16%" }],
+            9: [{ split: [5, 4], P: "58.96%" }, { split: [6, 3], P: "31.16%" }, { split: [7, 2], P: "8.90%" }, { split: [8, 1], P: "0.95%" }, { split: [9, 0], P: "0.03%" }],
+            10: [{ split: [6, 4], P: "48.79%" }, { split: [5, 5], P: "33.46%" }, { split: [7, 3], P: "14.73%" }, { split: [8, 2], P: "2.82%" }, { split: [9, 1], P: "0.19%" }, { split: [10, 0], P: "0.005%" }],
+            11: [{ split: [6, 5], P: "57.54%" }, { split: [7, 4], P: "31.51%" }, { split: [8, 3], P: "9.45%" }, { split: [9, 2], P: "1.39%" }, { split: [10, 1], P: "0.10%" }, { split: [11, 0], P: "0.002%" }],
+            12: [{ split: [7, 5], P: "49.04%" }, { split: [6, 6], P: "33.88%" }, { split: [8, 4], P: "13.99%" }, { split: [9, 3], P: "2.72%" }, { split: [10, 2], P: "0.34%" }, { split: [11, 1], P: "0.02%" }, { split: [12, 0], P: "0.0004%" }],
+            13: [{ split: [7, 6], P: "56.52%" }, { split: [8, 5], P: "31.85%" }, { split: [9, 4], P: "9.83%" }, { split: [10, 3], P: "1.57%" }, { split: [11, 2], P: "0.12%" }, { split: [12, 1], P: "0.003%" }, { split: [13, 0], P: "0.00002%" }]
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM Element Variables (initialized once DOM is ready) ---
+            // Tab Switching Elements
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Suit Rankings Tab Elements
+            let declarerSpadesEl, declarerHeartsEl, declarerDiamondsEl, declarerClubsEl;
+            let dummySpadesEl, dummyHeartsEl, dummyDiamondsEl, dummyClubsEl;
+            let suitAnalysisSection, checkAnswersBtn, newDealBtn, overallFeedbackEl;
+
+            // Timed Quiz Tab Elements
+            let quizTimerDurationInput, startQuizBtn, stopQuizBtn, quizTimerDisplay;
+            let quizArea, quizResultsSection, quizScoreEl, quizDetailedFeedbackEl;
+
+            // --- Assign DOM Elements ---
+            function assignRankingsTabElements() {
+                declarerSpadesEl = document.getElementById('declarerS');
+                declarerHeartsEl = document.getElementById('declarerH');
+                declarerDiamondsEl = document.getElementById('declarerD');
+                declarerClubsEl = document.getElementById('declarerC');
+                dummySpadesEl = document.getElementById('dummyS');
+                dummyHeartsEl = document.getElementById('dummyH');
+                dummyDiamondsEl = document.getElementById('dummyD');
+                dummyClubsEl = document.getElementById('dummyC');
+                suitAnalysisSection = document.getElementById('suitAnalysis');
+                checkAnswersBtn = document.getElementById('checkAnswersBtn');
+                newDealBtn = document.getElementById('newDealBtn');
+                overallFeedbackEl = document.getElementById('overallFeedback');
+            }
+
+            function assignQuizTabElements() {
+                quizTimerDurationInput = document.getElementById('quizTimerDuration');
+                startQuizBtn = document.getElementById('startQuizBtn');
+                stopQuizBtn = document.getElementById('stopQuizBtn');
+                quizTimerDisplay = document.getElementById('quizTimerDisplay');
+                quizArea = document.getElementById('quizArea');
+                quizResultsSection = document.getElementById('quizResults');
+                quizScoreEl = document.getElementById('quizScore');
+                quizDetailedFeedbackEl = document.getElementById('quizDetailedFeedback');
+            }
+            
+            assignRankingsTabElements(); // Assign elements for the default tab
+            assignQuizTabElements();     // Assign elements for the other tab
+
+            // --- Tab Switching Logic ---
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    const targetTab = button.getAttribute('data-tab');
+                    tabContents.forEach(content => {
+                        if (content.id === `${targetTab}Content`) {
+                            content.classList.add('active');
+                        } else {
+                            content.classList.remove('active');
+                        }
+                    });
+                    if (targetTab === 'quiz' && !quizActive) {
+                        resetQuizInterface();
+                    }
+                    if (targetTab === 'rankings' && !isRankingsInitialized) {
+                        initializeAppRankings(); // This will also call displayHandsRankings
+                        isRankingsInitialized = true;
+                    }
+                });
+            });
+
+            // --- Suit Rankings Tab Logic ---
+            let currentDeal = {
+                declarer: { S: 0, H: 0, D: 0, C: 0 },
+                dummy: { S: 0, H: 0, D: 0, C: 0 }
+            };
+            let isRankingsInitialized = false;
+
+            function generateSingleHandForRankings() {
+                const hand = { S: 0, H: 0, D: 0, C: 0 };
+                const suitKeysArray = Object.values(SUIT_KEYS_FOR_RANKINGS_TAB_ONLY);
+                for (let i = 0; i < 13; i++) {
+                    const randomSuitIndex = Math.floor(Math.random() * suitKeysArray.length);
+                    hand[suitKeysArray[randomSuitIndex]]++;
+                }
+                return hand;
+            }
+
+            function generateNewDealRankings() {
+                let attempts = 0;
+                while (attempts < 1000) {
+                    const declarerHand = generateSingleHandForRankings();
+                    const dummyHand = generateSingleHandForRankings();
+                    let isValidDeal = true;
+                    for (const suit of SUITS_DATA_FOR_RANKINGS_TAB_ONLY) {
+                        if (declarerHand[suit] + dummyHand[suit] > 13) {
+                            isValidDeal = false;
+                            break;
+                        }
+                    }
+                    if (isValidDeal) {
+                        currentDeal.declarer = declarerHand;
+                        currentDeal.dummy = dummyHand;
+                        return;
+                    }
+                    attempts++;
+                }
+                console.error("Failed to generate a valid deal for rankings tab after 1000 attempts.");
+            }
+
+            function displayHandsRankings() {
+                // Check if elements are valid before using them
+                if (!declarerSpadesEl || !declarerHeartsEl || !declarerDiamondsEl || !declarerClubsEl ||
+                    !dummySpadesEl || !dummyHeartsEl || !dummyDiamondsEl || !dummyClubsEl) {
+                    console.error("One or more hand display elements are null in displayHandsRankings.");
+                    assignRankingsTabElements(); // Try to re-assign them
+                    if (!declarerSpadesEl) return; // If still null, exit to prevent error
+                }
+
+                declarerSpadesEl.textContent = currentDeal.declarer.S;
+                declarerHeartsEl.textContent = currentDeal.declarer.H;
+                declarerDiamondsEl.textContent = currentDeal.declarer.D;
+                declarerClubsEl.textContent = currentDeal.declarer.C;
+                dummySpadesEl.textContent = currentDeal.dummy.S;
+                dummyHeartsEl.textContent = currentDeal.dummy.H;
+                dummyDiamondsEl.textContent = currentDeal.dummy.D;
+                dummyClubsEl.textContent = currentDeal.dummy.C;
+            }
+
+            function renderSuitAnalysisRankings() {
+                if (!suitAnalysisSection || !overallFeedbackEl) {
+                     console.error("suitAnalysisSection or overallFeedbackEl is null in renderSuitAnalysisRankings.");
+                     assignRankingsTabElements();
+                     if(!suitAnalysisSection) return;
+                }
+                suitAnalysisSection.innerHTML = '';
+                overallFeedbackEl.textContent = '';
+                overallFeedbackEl.className = 'mt-6 text-center text-lg font-medium';
+
+                SUITS_DATA_FOR_RANKINGS_TAB_ONLY.forEach(suit => {
+                    const suitDetail = SUIT_DETAILS_FOR_RANKINGS_TAB_ONLY[suit];
+                    const declarerCount = currentDeal.declarer[suit];
+                    const dummyCount = currentDeal.dummy[suit];
+                    const missingCards = 13 - declarerCount - dummyCount;
+
+                    const suitDiv = document.createElement('div');
+                    suitDiv.className = 'p-4 bg-gray-50 rounded-lg shadow-sm';
+                    suitDiv.innerHTML = `
+                        <h3 class="text-lg font-semibold mb-3 ${suitDetail.class}">
+                            <span class="suit-icon">${suitDetail.icon}</span> ${suitDetail.name}
+                            <span class="text-sm font-normal text-gray-600 ml-2">
+                                (Declarer: ${declarerCount}, Dummy: ${dummyCount}) - Missing: ${missingCards}
+                            </span>
+                        </h3>`;
+
+                    const possibleSplitsData = SUIT_SPLIT_LIKELIHOODS[missingCards] || [];
+                    const numLinesToShow = Math.min(3, possibleSplitsData.length);
+
+                    if (missingCards < 0) {
+                        suitDiv.innerHTML += `<p class="text-red-600">Error: Invalid card counts (D:${declarerCount} + Du:${dummyCount} > 13).</p>`;
+                    } else if (numLinesToShow === 0 && missingCards > 0) {
+                        suitDiv.innerHTML += `<p class="text-gray-500">No common splits defined for ${missingCards} missing cards.</p>`;
+                    } else if (missingCards === 0) {
+                         suitDiv.innerHTML += `<p class="text-gray-700 font-medium">0-0 (No cards missing, ${possibleSplitsData[0]?.P || '100%'})</p>`;
+                    }
+
+                    for (let i = 0; i < numLinesToShow; i++) {
+                        const rankText = i === 0 ? "Most Likely:" : i === 1 ? "2nd Most Likely:" : "3rd Most Likely:";
+                        const rowDiv = document.createElement('div');
+                        rowDiv.className = 'flex items-center space-x-2 mb-3 pl-4';
+                        rowDiv.innerHTML = `
+                            <label class="w-36 text-sm text-gray-700">${rankText}</label>
+                            <input type="number" min="0" max="${missingCards}" data-suit="${suit}" data-row="${i}" data-opp="1" class="w-16 text-sm" aria-label="${suitDetail.name} split ${i+1} opponent 1">
+                            <span class="text-gray-700">-</span>
+                            <input type="number" min="0" max="${missingCards}" data-suit="${suit}" data-row="${i}" data-opp="2" class="w-16 text-sm" aria-label="${suitDetail.name} split ${i+1} opponent 2">
+                            <span class="feedback-message text-xs ml-2"></span>`;
+                        suitDiv.appendChild(rowDiv);
+                    }
+                    suitAnalysisSection.appendChild(suitDiv);
+                });
+            }
+
+            function checkAnswersRankings() {
+                 if (!suitAnalysisSection || !overallFeedbackEl) {
+                     console.error("Missing core elements for checkAnswersRankings.");
+                     assignRankingsTabElements();
+                     if(!suitAnalysisSection) return;
+                }
+                let allCorrect = true;
+                let anyInputMade = false;
+
+                SUITS_DATA_FOR_RANKINGS_TAB_ONLY.forEach(suit => {
+                    const declarerCount = currentDeal.declarer[suit];
+                    const dummyCount = currentDeal.dummy[suit];
+                    const missingCards = 13 - declarerCount - dummyCount;
+
+                    if (missingCards < 0 || missingCards > 13) return;
+
+                    const correctSplitsDataForSuit = SUIT_SPLIT_LIKELIHOODS[missingCards] || [];
+                    const numLinesToShow = Math.min(3, correctSplitsDataForSuit.length);
+
+                    for (let i = 0; i < numLinesToShow; i++) {
+                        const inputOpp1 = suitAnalysisSection.querySelector(`input[data-suit="${suit}"][data-row="${i}"][data-opp="1"]`);
+                        const inputOpp2 = suitAnalysisSection.querySelector(`input[data-suit="${suit}"][data-row="${i}"][data-opp="2"]`);
+                        const feedbackEl = suitAnalysisSection.querySelector(`input[data-suit="${suit}"][data-row="${i}"][data-opp="2"] + .feedback-message`);
+
+                        if (!inputOpp1 || !inputOpp2 || !feedbackEl) continue;
+
+                        inputOpp1.classList.remove('feedback-correct', 'feedback-incorrect');
+                        inputOpp2.classList.remove('feedback-correct', 'feedback-incorrect');
+                        feedbackEl.textContent = '';
+                        feedbackEl.className = 'feedback-message text-xs ml-2';
+
+                        if (!inputOpp1.value && !inputOpp2.value) continue;
+                        anyInputMade = true;
+
+                        const val1 = parseInt(inputOpp1.value);
+                        const val2 = parseInt(inputOpp2.value);
+
+                        if (isNaN(val1) || isNaN(val2)) {
+                            inputOpp1.classList.add('feedback-incorrect');
+                            inputOpp2.classList.add('feedback-incorrect');
+                            feedbackEl.textContent = 'Invalid input.';
+                            feedbackEl.classList.add('text-red-600');
+                            allCorrect = false;
+                            continue;
+                        }
+
+                        if (val1 + val2 !== missingCards) {
+                            inputOpp1.classList.add('feedback-incorrect');
+                            inputOpp2.classList.add('feedback-incorrect');
+                            feedbackEl.textContent = `Sum must be ${missingCards}.`;
+                            feedbackEl.classList.add('text-red-600');
+                            allCorrect = false;
+                            continue;
+                        }
+
+                        if (!correctSplitsDataForSuit[i]) {
+                            inputOpp1.classList.add('feedback-incorrect');
+                            inputOpp2.classList.add('feedback-incorrect');
+                            feedbackEl.textContent = `Logic error.`;
+                            feedbackEl.classList.add('text-red-600');
+                            allCorrect = false;
+                            continue;
+                        }
+
+                        const expectedSplitObj = correctSplitsDataForSuit[i];
+                        const expectedSplit = expectedSplitObj.split;
+                        const percentage = expectedSplitObj.P;
+                        const isCorrect = (val1 === expectedSplit[0] && val2 === expectedSplit[1]) ||
+                                          (val1 === expectedSplit[1] && val2 === expectedSplit[0]);
+
+                        if (isCorrect) {
+                            inputOpp1.classList.add('feedback-correct');
+                            inputOpp2.classList.add('feedback-correct');
+                            feedbackEl.textContent = `Correct! (${percentage})`;
+                            feedbackEl.classList.add('text-green-600');
+                        } else {
+                            inputOpp1.classList.add('feedback-incorrect');
+                            inputOpp2.classList.add('feedback-incorrect');
+                            feedbackEl.textContent = `Expected: ${expectedSplit[0]}-${expectedSplit[1]} (${percentage})`;
+                            feedbackEl.classList.add('text-red-600');
+                            allCorrect = false;
+                        }
+                    }
+                });
+
+                if (!anyInputMade) {
+                    overallFeedbackEl.textContent = "Please enter some splits to check.";
+                    overallFeedbackEl.className = 'mt-6 text-center text-lg font-medium text-yellow-600';
+                } else if (allCorrect) {
+                    overallFeedbackEl.textContent = "Excellent! All shown splits are correct!";
+                    overallFeedbackEl.className = 'mt-6 text-center text-lg font-medium text-green-600';
+                } else {
+                    overallFeedbackEl.textContent = "Some splits are incorrect. Review the feedback.";
+                    overallFeedbackEl.className = 'mt-6 text-center text-lg font-medium text-red-600';
+                }
+            }
+
+            function initializeAppRankings() {
+                if (!checkAnswersBtn || !newDealBtn) {
+                    console.error("Buttons for rankings app not found during initialization.");
+                    assignRankingsTabElements(); // Ensure elements are assigned
+                    if(!checkAnswersBtn || !newDealBtn) return; // If still not found, exit
+                }
+                generateNewDealRankings();
+                displayHandsRankings();
+                renderSuitAnalysisRankings();
+
+                checkAnswersBtn.addEventListener('click', checkAnswersRankings);
+                newDealBtn.addEventListener('click', () => {
+                    generateNewDealRankings();
+                    displayHandsRankings();
+                    renderSuitAnalysisRankings();
+                });
+            }
+
+
+            // --- Timed Quiz Tab Logic ---
+            let quizTimerInterval;
+            let quizTimeRemaining;
+            let quizQuestions = [];
+            let quizActive = false;
+            const NUM_QUIZ_QUESTIONS = 5;
+            const MAX_ANSWERS_PER_QUIZ_QUESTION = 4;
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+
+            function resetQuizInterface() {
+                 if (!quizTimerDurationInput || !startQuizBtn || !stopQuizBtn || !quizArea || !quizResultsSection || !quizTimerDisplay) {
+                    console.error("One or more quiz interface elements are null in resetQuizInterface.");
+                    assignQuizTabElements(); // Try to re-assign them
+                    if(!quizTimerDurationInput) return; // If still null, exit
+                }
+                quizTimerDurationInput.disabled = false;
+                startQuizBtn.disabled = false;
+                startQuizBtn.classList.remove('hidden');
+                stopQuizBtn.classList.add('hidden');
+                quizArea.innerHTML = '';
+                quizResultsSection.classList.add('hidden');
+                if(quizScoreEl) quizScoreEl.textContent = '';
+                if(quizDetailedFeedbackEl) quizDetailedFeedbackEl.innerHTML = '';
+                
+                let initialTime = parseInt(quizTimerDurationInput.value);
+                if (isNaN(initialTime) || initialTime <10) initialTime = 30;
+                quizTimeRemaining = initialTime;
+                quizTimerDisplay.textContent = formatTime(quizTimeRemaining);
+                quizActive = false;
+            }
+
+            function generateQuizQuestions() {
+                quizQuestions = [];
+                const usedMissingCardCounts = new Set();
+
+                for (let i = 0; i < NUM_QUIZ_QUESTIONS; i++) {
+                    let missingCards;
+                    let attempts = 0;
+                    do {
+                        missingCards = Math.floor(Math.random() * 9) + 2;
+                        attempts++;
+                    } while (usedMissingCardCounts.has(missingCards) && attempts < 20 && usedMissingCardCounts.size < 9);
+                    usedMissingCardCounts.add(missingCards);
+
+                    if (!SUIT_SPLIT_LIKELIHOODS[missingCards] || SUIT_SPLIT_LIKELIHOODS[missingCards].length === 0) {
+                        i--; continue;
+                    }
+
+                    let declarerCount, dummyCount;
+                    let combinedInOwnHands = 13 - missingCards;
+                    declarerCount = Math.floor(Math.random() * (combinedInOwnHands + 1));
+                    dummyCount = combinedInOwnHands - declarerCount;
+
+                    quizQuestions.push({
+                        declarer: declarerCount,
+                        dummy: dummyCount,
+                        missing: missingCards,
+                        id: `q-${i}`
+                    });
+                }
+            }
+
+            function renderQuiz() {
+                if (!quizArea) { assignQuizTabElements(); if(!quizArea) return; }
+                quizArea.innerHTML = '';
+                quizQuestions.forEach((q, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'quiz-question-container';
+                    questionDiv.innerHTML = `
+                        <h4 class="text-md font-semibold mb-2">
+                            ${index + 1}. Declarer has ${q.declarer}, Dummy has ${q.dummy}. (Opponents have ${q.missing} cards)
+                        </h4>
+                        <div id="answers-${q.id}" class="space-y-1 pl-4">
+                            ${[...Array(MAX_ANSWERS_PER_QUIZ_QUESTION)].map((_, i) => `
+                                <div class="flex items-center space-x-1">
+                                    <label class="w-24 text-xs text-gray-600">Guess ${i + 1}:</label>
+                                    <input type="number" min="0" max="${q.missing}" data-q="${q.id}" data-ans="${i}" data-opp="1" class="quiz-input text-xs" aria-label="Q${index+1} Ans${i+1} Opp1">
+                                    <span class="text-gray-600 text-xs">-</span>
+                                    <input type="number" min="0" max="${q.missing}" data-q="${q.id}" data-ans="${i}" data-opp="2" class="quiz-input text-xs" aria-label="Q${index+1} Ans${i+1} Opp2">
+                                </div>
+                            `).join('')}
+                        </div>`;
+                    quizArea.appendChild(questionDiv);
+                });
+            }
+
+            function startQuiz() {
+                if (!quizTimerDurationInput || !startQuizBtn || !stopQuizBtn || !quizResultsSection || !quizTimerDisplay) {
+                     assignQuizTabElements();
+                     if(!quizTimerDurationInput) return;
+                }
+                quizActive = true;
+                quizTimerDurationInput.disabled = true;
+                startQuizBtn.classList.add('hidden');
+                stopQuizBtn.classList.remove('hidden');
+                quizResultsSection.classList.add('hidden');
+                if(quizScoreEl) quizScoreEl.textContent = '';
+                if(quizDetailedFeedbackEl) quizDetailedFeedbackEl.innerHTML = '';
+
+                quizTimeRemaining = parseInt(quizTimerDurationInput.value);
+                if (isNaN(quizTimeRemaining) || quizTimeRemaining < 10) {
+                    quizTimeRemaining = 30;
+                    quizTimerDurationInput.value = 30;
+                }
+                quizTimerDisplay.textContent = formatTime(quizTimeRemaining);
+
+                generateQuizQuestions();
+                renderQuiz();
+                const firstQuizInput = quizArea.querySelector(`input[data-q="${quizQuestions[0]?.id}"][data-ans="0"][data-opp="1"]`);
+                if (firstQuizInput) firstQuizInput.focus();
+
+                quizTimerInterval = setInterval(() => {
+                    quizTimeRemaining--;
+                    quizTimerDisplay.textContent = formatTime(quizTimeRemaining);
+                    if (quizTimeRemaining <= 0) {
+                        clearInterval(quizTimerInterval);
+                        endQuiz();
+                    }
+                }, 1000);
+            }
+
+            function endQuiz() {
+                 if (!quizTimerDurationInput || !startQuizBtn || !stopQuizBtn || !quizArea || !quizResultsSection || !quizScoreEl || !quizDetailedFeedbackEl) {
+                     assignQuizTabElements();
+                     if(!quizTimerDurationInput) return;
+                }
+                quizActive = false;
+                clearInterval(quizTimerInterval);
+                quizTimerDurationInput.disabled = false;
+                startQuizBtn.disabled = false;
+                startQuizBtn.classList.remove('hidden');
+                stopQuizBtn.classList.add('hidden');
+
+                let totalScore = 0;
+                let maxPossibleScoreCalculation = 0;
+                quizDetailedFeedbackEl.innerHTML = '';
+
+                quizQuestions.forEach((q, qIndex) => {
+                    const missingCards = q.missing;
+                    const correctSplitsData = SUIT_SPLIT_LIKELIHOODS[missingCards] || [];
+                    
+                    let feedbackHtml = `<div class="p-2 border rounded mb-2 bg-indigo-50">
+                                            <h5 class="font-semibold">Question ${qIndex + 1}: D=${q.declarer}, Du=${q.dummy} (Missing ${missingCards})</h5>`;
+
+                    for (let i = 0; i < MAX_ANSWERS_PER_QUIZ_QUESTION; i++) {
+                        const inputOpp1 = quizArea.querySelector(`input[data-q="${q.id}"][data-ans="${i}"][data-opp="1"]`);
+                        const inputOpp2 = quizArea.querySelector(`input[data-q="${q.id}"][data-ans="${i}"][data-opp="2"]`);
+
+                        if (!inputOpp1 || !inputOpp2) continue;
+
+                        const val1Text = inputOpp1.value;
+                        const val2Text = inputOpp2.value;
+
+                        if (val1Text === "" && val2Text === "") continue;
+
+                        const val1 = parseInt(val1Text);
+                        const val2 = parseInt(val2Text);
+                        let entryFeedback = "";
+
+                        if (isNaN(val1) || isNaN(val2)) {
+                            entryFeedback = `<span class="text-red-500">Invalid input</span>`;
+                        } else if (val1 + val2 !== missingCards) {
+                            entryFeedback = `${val1}-${val2} <span class="text-red-500">(Sum must be ${missingCards})</span>`;
+                        } else if (i < correctSplitsData.length) {
+                            const expectedSplitObj = correctSplitsData[i];
+                            const expected = expectedSplitObj.split;
+                            const percentage = expectedSplitObj.P;
+                            
+                            if ((val1 === expected[0] && val2 === expected[1]) || (val1 === expected[1] && val2 === expected[0])) {
+                                entryFeedback = `${val1}-${val2} <span class="text-green-500">Correct for Rank ${i+1}! (${percentage})</span>`;
+                                totalScore += (MAX_ANSWERS_PER_QUIZ_QUESTION - i);
+                            } else {
+                                entryFeedback = `${val1}-${val2} <span class="text-red-500">Incorrect for Rank ${i+1}. Expected: ${expected[0]}-${expected[1]} (${percentage})</span>`;
+                            }
+                        } else {
+                            entryFeedback = `${val1}-${val2} <span class="text-orange-500">(Too many guesses for ${missingCards} missing, or guess for an unranked position)</span>`;
+                        }
+                        feedbackHtml += `<p class="text-xs ml-4">Your Guess ${i+1}: ${entryFeedback}</p>`;
+                    }
+                    feedbackHtml += `<p class="text-xs ml-4 mt-1 font-medium">Correct order for ${missingCards} missing:</p>`;
+                    correctSplitsData.slice(0, MAX_ANSWERS_PER_QUIZ_QUESTION).forEach((cs, rank) => {
+                        feedbackHtml += `<p class="text-xs ml-6">${rank+1}: ${cs.split[0]}-${cs.split[1]} (${cs.P})</p>`;
+                    });
+
+                    feedbackHtml += `</div>`;
+                    quizDetailedFeedbackEl.innerHTML += feedbackHtml;
+                });
+                
+                maxPossibleScoreCalculation = 0;
+                quizQuestions.forEach(q => {
+                    const correctSplitsData = SUIT_SPLIT_LIKELIHOODS[q.missing] || [];
+                    for(let i=0; i < Math.min(MAX_ANSWERS_PER_QUIZ_QUESTION, correctSplitsData.length); i++) {
+                        maxPossibleScoreCalculation += (MAX_ANSWERS_PER_QUIZ_QUESTION - i);
+                    }
+                });
+
+                quizScoreEl.textContent = `Your Score: ${totalScore} out of ${maxPossibleScoreCalculation}`;
+                quizResultsSection.classList.remove('hidden');
+                quizArea.innerHTML = '<p class="text-center text-gray-700">Quiz finished. See results below.</p>';
+            }
+
+            // --- Initialization ---
+            initializeAppRankings();
+            isRankingsInitialized = true;
+            resetQuizInterface(); // Setup quiz tab initial state
+
+            if (startQuizBtn) startQuizBtn.addEventListener('click', startQuiz);
+            if (stopQuizBtn) stopQuizBtn.addEventListener('click', () => {
+                clearInterval(quizTimerInterval);
+                endQuiz();
+            });
+            
+            if (quizArea) quizArea.addEventListener('keydown', (e) => {
+                if (!quizActive || e.key !== 'Enter') return;
+
+                const target = e.target;
+                if (target.type === 'number' && target.classList.contains('quiz-input')) {
+                    e.preventDefault(); 
+
+                    const qId = target.dataset.q;
+                    const ansIndex = parseInt(target.dataset.ans);
+                    const currentOpp = target.dataset.opp;
+                    let nextInput;
+
+                    if (currentOpp === '1') {
+                        nextInput = quizArea.querySelector(`input[data-q="${qId}"][data-ans="${ansIndex}"][data-opp="2"]`);
+                    } else if (currentOpp === '2') {
+                        if (ansIndex < MAX_ANSWERS_PER_QUIZ_QUESTION - 1) {
+                            nextInput = quizArea.querySelector(`input[data-q="${qId}"][data-ans="${ansIndex + 1}"][data-opp="1"]`);
+                        } else {
+                            const currentQIndex = quizQuestions.findIndex(q => q.id === qId);
+                            if (currentQIndex < quizQuestions.length - 1) {
+                                const nextQId = quizQuestions[currentQIndex + 1].id;
+                                nextInput = quizArea.querySelector(`input[data-q="${nextQId}"][data-ans="0"][data-opp="1"]`);
+                            } else {
+                                target.blur(); 
+                            }
+                        }
+                    }
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                }
+            });
+        }); // End of DOMContentLoaded
+    </script>    
+</body>
+</html>    
